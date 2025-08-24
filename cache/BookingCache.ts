@@ -2,15 +2,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ShipInfo, CachedData } from '../types/booking';
 
 /**
- * 船舶信息数据缓存类，负责本地持久化存储船舶信息数据
+ * Ship information data cache class responsible for local persistent storage of ship information data
  */
 export class BookingCache {
   private readonly CACHE_KEY = 'ship_info_data_cache';
-  private readonly CACHE_DURATION = 30 * 60 * 1000; // 缓存有效时长30分钟
+  private readonly CACHE_DURATION = 30 * 60 * 1000; // Cache valid duration 30 minutes
 
   /**
-   * 存储数据到缓存
-   * @param shipInfo 船舶信息数据
+   * Store data in cache
+   * @param shipInfo Ship information data
    */
   public async saveToCache(shipInfo: ShipInfo): Promise<void> {
     try {
@@ -18,7 +18,7 @@ export class BookingCache {
         data: shipInfo,
         timestamp: Date.now()
       };
-      
+
       const jsonString = JSON.stringify(cachedData);
       await AsyncStorage.setItem(this.CACHE_KEY, jsonString);
       console.log('Ship info data saved to cache');
@@ -29,35 +29,35 @@ export class BookingCache {
   }
 
   /**
-   * 从缓存读取数据
-   * @param ignoreExpiry 是否忽略过期检查
-   * @returns 缓存的船舶信息数据或null
+   * Read data from cache
+   * @param ignoreExpiry Whether to ignore expiration check
+   * @returns Cached ship information data or null
    */
   public async getFromCache(ignoreExpiry: boolean = false): Promise<ShipInfo | null> {
     try {
       const jsonString = await AsyncStorage.getItem(this.CACHE_KEY);
-      
+
       if (!jsonString) {
         console.log('No ship info data in cache');
         return null;
       }
-      
+
       const cachedData: CachedData = JSON.parse(jsonString);
       const { data, timestamp } = cachedData;
-      
-      // 检查缓存是否过期
+
+      // Check if cache has expired
       if (!ignoreExpiry && this.isCacheExpired(timestamp)) {
         console.log('Ship info cache has expired');
-        // 过期后清除缓存
+        // Clear cache after expiration
         await this.clearCache();
         return null;
       }
-      
+
       console.log('Ship info data retrieved from cache');
       return data;
     } catch (error) {
       console.error('Error retrieving ship info data from cache:', error);
-      // 在发生错误时，尝试清除可能损坏的缓存
+      // In case of error, try to clear possibly corrupted cache
       try {
         await this.clearCache();
       } catch (clearError) {
@@ -68,9 +68,9 @@ export class BookingCache {
   }
 
   /**
-   * 检查缓存是否过期
-   * @param timestamp 缓存的时间戳
-   * @returns 是否过期
+   * Check if cache has expired
+   * @param timestamp Cache timestamp
+   * @returns Whether it has expired
    */
   public isCacheExpired(timestamp: number): boolean {
     const now = Date.now();
@@ -78,7 +78,7 @@ export class BookingCache {
   }
 
   /**
-   * 清除缓存
+   * Clear cache
    */
   public async clearCache(): Promise<void> {
     try {
@@ -91,17 +91,17 @@ export class BookingCache {
   }
 
   /**
-   * 获取缓存的元数据
-   * @returns 缓存的元数据，包括时间戳
+   * Get cache metadata
+   * @returns Cache metadata including timestamp
    */
   public async getCacheMetadata(): Promise<{ timestamp: number } | null> {
     try {
       const jsonString = await AsyncStorage.getItem(this.CACHE_KEY);
-      
+
       if (!jsonString) {
         return null;
       }
-      
+
       const cachedData: CachedData = JSON.parse(jsonString);
       return {
         timestamp: cachedData.timestamp
@@ -113,17 +113,17 @@ export class BookingCache {
   }
 
   /**
-   * 更新缓存的有效期
-   * 此方法可用于在缓存即将过期但数据仍然有效的情况下延长缓存寿命
+   * Update cache validity period
+   * This method can be used to extend cache lifetime when cache is about to expire but data is still valid
    */
   public async extendCacheLifetime(): Promise<boolean> {
     try {
-      const shipInfo = await this.getFromCache(true); // 忽略过期检查
-      
+      const shipInfo = await this.getFromCache(true); // Ignore expiration check
+
       if (!shipInfo) {
         return false;
       }
-      
+
       await this.saveToCache(shipInfo);
       return true;
     } catch (error) {

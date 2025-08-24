@@ -3,16 +3,16 @@ import { BookingService } from '../services/BookingService';
 import { BookingCache } from '../cache/BookingCache';
 
 /**
- * 船舶信息数据管理器，整合Service层和Cache层，提供统一的数据访问接口
+ * Ship information data manager that integrates Service layer and Cache layer to provide unified data access interface
  */
 export class BookingManager {
   private readonly bookingService: BookingService;
   private readonly bookingCache: BookingCache;
-  private readonly defaultCacheDuration = 30 * 60 * 1000; // 默认缓存时长30分钟
+  private readonly defaultCacheDuration = 30 * 60 * 1000; // Default cache duration 30 minutes
   private readonly refreshOnLoad: boolean;
   private cacheDuration: number;
 
-  // 状态管理
+  // State management
   private state: ShipInfoManagerState = {
     isLoading: false,
     error: null,
@@ -20,12 +20,12 @@ export class BookingManager {
     lastUpdated: null
   };
 
-  // 回调函数列表
+  // Callback function list
   private onStateChangeCallbacks: ((state: ShipInfoManagerState) => void)[] = [];
 
   /**
-   * 构造函数
-   * @param options 配置选项
+   * Constructor
+   * @param options Configuration options
    */
   constructor(options?: ShipInfoManagerOptions) {
     this.bookingService = new BookingService();
@@ -35,24 +35,24 @@ export class BookingManager {
   }
 
   /**
-   * 获取当前状态
+   * Get current state
    */
   public getState(): ShipInfoManagerState {
     return { ...this.state };
   }
 
   /**
-   * 注册状态变化回调
-   * @param callback 状态变化时的回调函数
-   * @returns 取消注册的函数
+   * Register state change callback
+   * @param callback Callback function when state changes
+   * @returns Function to unregister
    */
   public onStateChange(callback: (state: ShipInfoManagerState) => void): () => void {
     this.onStateChangeCallbacks.push(callback);
-    
-    // 立即调用一次回调，传递当前状态
+
+    // Call callback immediately with current state
     callback(this.getState());
-    
-    // 返回取消注册的函数
+
+    // Return unregister function
     return () => {
       const index = this.onStateChangeCallbacks.indexOf(callback);
       if (index > -1) {
@@ -62,7 +62,7 @@ export class BookingManager {
   }
 
   /**
-   * 更新状态并通知所有回调
+   * Update state and notify all callbacks
    */
   private setState(newState: Partial<ShipInfoManagerState>): void {
     this.state = { ...this.state, ...newState };
@@ -70,17 +70,17 @@ export class BookingManager {
   }
 
   /**
-   * 加载船舶信息数据
-   * 优先从缓存加载，根据配置决定是否刷新
+   * Load ship information data
+   * Load from cache first, decide whether to refresh based on configuration
    */
   public async loadBookings(): Promise<ShipInfo> {
     try {
       this.setState({ isLoading: true, error: null });
-      
-      // 1. 尝试从缓存加载数据
+
+      // 1. Try to load data from cache
       let cachedShipInfo = await this.bookingCache.getFromCache();
-      
-      // 2. 如果缓存有数据且不需要强制刷新，则使用缓存数据
+
+      // 2. If there's cached data and no forced refresh needed, use cached data
       if (cachedShipInfo && !this.refreshOnLoad) {
         this.setState({
           shipInfo: cachedShipInfo,
@@ -89,28 +89,28 @@ export class BookingManager {
         });
         return cachedShipInfo;
       }
-      
-      // 3. 从服务获取新数据
+
+      // 3. Get new data from service
       const newShipInfo = await this.bookingService.getBookings(this.refreshOnLoad);
-      
-      // 4. 更新缓存
+
+      // 4. Update cache
       await this.bookingCache.saveToCache(newShipInfo);
-      
-      // 5. 更新状态
+
+      // 5. Update state
       this.setState({
         shipInfo: newShipInfo,
         isLoading: false,
         lastUpdated: Date.now()
       });
-      
+
       return newShipInfo;
     } catch (error) {
       console.error('Error loading ship info:', error);
-      
-      // 如果加载失败但有缓存数据，使用缓存数据
+
+      // If loading fails but there's cached data, use cached data
       if (!this.state.shipInfo) {
         try {
-          const fallbackCache = await this.bookingCache.getFromCache(true); // 忽略过期检查
+          const fallbackCache = await this.bookingCache.getFromCache(true); // Ignore expiration check
           if (fallbackCache) {
             this.setState({
               shipInfo: fallbackCache,
@@ -123,67 +123,67 @@ export class BookingManager {
           console.error('Error loading fallback cache:', fallbackError);
         }
       }
-      
-      // 更新错误状态
+
+      // Update error state
       this.setState({
         isLoading: false,
         error: error instanceof Error ? error : new Error('Failed to load ship info')
       });
-      
+
       throw error;
     }
   }
 
   /**
-   * 强制刷新船舶信息数据
+   * Force refresh ship information data
    */
   public async refreshBookings(): Promise<ShipInfo> {
     try {
       this.setState({ isLoading: true, error: null });
-      
-      // 清除服务层内存缓存
+
+      // Clear service layer memory cache
       this.bookingService.clearCache();
-      
-      // 从服务获取新数据
+
+      // Get new data from service
       const newShipInfo = await this.bookingService.getBookings(true);
-      
-      // 更新缓存
+
+      // Update cache
       await this.bookingCache.saveToCache(newShipInfo);
-      
-      // 更新状态
+
+      // Update state
       this.setState({
         shipInfo: newShipInfo,
         isLoading: false,
         lastUpdated: Date.now()
       });
-      
+
       return newShipInfo;
     } catch (error) {
       console.error('Error refreshing ship info:', error);
-      
-      // 更新错误状态
+
+      // Update error state
       this.setState({
         isLoading: false,
         error: error instanceof Error ? error : new Error('Failed to refresh ship info')
       });
-      
+
       throw error;
     }
   }
 
   /**
-   * 清除所有缓存
+   * Clear all cache
    */
   public async clearAllCache(): Promise<void> {
     try {
       this.bookingService.clearCache();
       await this.bookingCache.clearCache();
-      
+
       this.setState({
         shipInfo: null,
         lastUpdated: null
       });
-      
+
       console.log('All ship info caches cleared');
     } catch (error) {
       console.error('Error clearing all caches:', error);
@@ -192,7 +192,7 @@ export class BookingManager {
   }
 
   /**
-   * 获取缓存是否有效
+   * Check if cache is valid
    */
   public async isCacheValid(): Promise<boolean> {
     const metadata = await this.bookingCache.getCacheMetadata();

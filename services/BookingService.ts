@@ -1,25 +1,25 @@
 import { ShipInfo } from '../types/booking';
 
 /**
- * 船舶信息服务类，负责从数据源获取船舶信息数据
+ * Ship information service class responsible for retrieving ship information data from data sources
  */
 export class BookingService {
   private readonly dataSourcePath = 'booking.json';
-  private readonly dataTTL = 30 * 60 * 1000; // 数据有效期30分钟
+  private readonly dataTTL = 30 * 60 * 1000; // Data validity period 30 minutes
   private lastFetchedTime: number | null = null;
   private cachedResponse: ShipInfo | null = null;
 
   /**
-   * 获取船舶信息数据
-   * @param forceRefresh 是否强制刷新数据，忽略缓存
-   * @returns 船舶信息数据
+   * Get ship information data
+   * @param forceRefresh Whether to force refresh data, ignoring cache
+   * @returns Ship information data
    */
   public async getBookings(forceRefresh: boolean = false): Promise<ShipInfo> {
     try {
-      // 检查缓存是否有效
+      // Check if cache is valid
       if (this.cachedResponse && this.lastFetchedTime && !forceRefresh) {
         const now = Date.now();
-        // 如果缓存未过期，则返回缓存数据
+        // If cache hasn't expired, return cached data
         if (now - this.lastFetchedTime < this.dataTTL) {
           console.log('Using cached ship info data');
           return this.cachedResponse;
@@ -27,21 +27,21 @@ export class BookingService {
         console.log('Cached ship info data has expired, fetching new data');
       }
 
-      // 模拟网络请求延迟
+      // Simulate network request delay
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // 在实际应用中，这里应该是一个API调用
-      // 但在当前环境中，我们从本地文件读取
+      // In a real application, this would be an API call
+      // But in the current environment, we read from local file
       const response = await this.fetchFromDataSource();
-      
-      // 更新缓存
+
+      // Update cache
       this.cachedResponse = response;
       this.lastFetchedTime = Date.now();
-      
+
       return response;
     } catch (error) {
       console.error('Error fetching ship info:', error);
-      // 如果有缓存数据，即使过期也返回
+      // If there's cached data, return it even if expired
       if (this.cachedResponse) {
         console.warn('Returning expired cached data due to error');
         return this.cachedResponse;
@@ -51,17 +51,17 @@ export class BookingService {
   }
 
   /**
-   * 从数据源获取数据
-   * 实际项目中，这里会是一个HTTP请求
-   * 在当前环境中，我们使用mock数据
+   * Fetch data from data source
+   * In real projects, this would be an HTTP request
+   * In the current environment, we use mock data
    */
   private async fetchFromDataSource(): Promise<ShipInfo> {
     try {
-      // 在Expo环境中，我们可以使用Asset或fs来读取文件
-      // 但在当前环境中，我们使用mock数据
-      
-      // 模拟从文件读取数据
-      // 注意：在实际Expo项目中，你需要使用正确的方式加载本地文件
+      // In Expo environment, we can use Asset or fs to read files
+      // But in the current environment, we use mock data
+
+      // Simulate reading data from file
+      // Note: In a real Expo project, you need to use the correct way to load local files
       const mockData = await this.loadMockData();
       return mockData;
     } catch (error) {
@@ -71,12 +71,12 @@ export class BookingService {
   }
 
   /**
-   * 加载mock数据
-   * 实际项目中会被API调用替代
+   * Load mock data
+   * Will be replaced by API calls in real projects
    */
   private async loadMockData(): Promise<ShipInfo> {
-    // 由于我们不能直接读取本地文件（在某些环境中有限制），
-    // 这里直接使用与booking.json相同的内容作为mock数据
+    // Since we can't directly read local files (restrictions in some environments),
+    // we use the same content as booking.json here as mock data
     return {
       shipReference: "ABCDEF",
       shipToken: "AAAABBBCCCCDDD",
@@ -123,9 +123,9 @@ export class BookingService {
   }
 
   /**
-   * 检查数据是否过期
-   * @param timestamp 数据时间戳
-   * @returns 是否过期
+   * Check if data has expired
+   * @param timestamp Data timestamp
+   * @returns Whether it has expired
    */
   public isDataExpired(timestamp: number): boolean {
     const now = Date.now();
@@ -133,7 +133,7 @@ export class BookingService {
   }
 
   /**
-   * 清除缓存
+   * Clear cache
    */
   public clearCache(): void {
     this.cachedResponse = null;
