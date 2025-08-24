@@ -2,6 +2,7 @@
 
 
 # mobileTest 
+  ```bash
 1. path: app/booking.tsx
 
 2. path:cache/bookingCache.ts
@@ -9,7 +10,7 @@
 3. path:managers/BookingManager.ts
 
 4. path:types/booking.ts
-
+   ```
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
